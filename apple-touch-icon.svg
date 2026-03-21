@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <rect width="180" height="180" rx="40" fill="#090909"/>
+  <rect x="8" y="8" width="164" height="164" rx="34" fill="#c8ff00" opacity="0.06"/>
+  <text x="90" y="130" text-anchor="middle" font-family="Arial Black, sans-serif" font-weight="900" font-size="108" letter-spacing="-4" fill="#c8ff00">G</text>
+</svg>
