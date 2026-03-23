@@ -1146,7 +1146,7 @@ const WORKOUTS_DEFAULT = [
 // STATE & PERSISTENCE
 // ═══════════════════════════════════════
 let state = {exercises:[],workouts:[],settings:{hiitDuration:45,plankDuration:90,restDuration:15},startWeight:null,goalWeight:null,currentWeight:null,workoutDays:{}};
-let T = {active:false,paused:false,workoutId:null,exerciseIndex:0,phase:'work',timeLeft:0,totalTime:0,interval:null,completedExercises:0,startTime:null};
+let T = {active:false,paused:false,workoutId:null,exerciseIndex:0,phase:'work',timeLeft:0,totalTime:0,interval:null,rafId:null,completedExercises:0,startTime:null,phaseEnd:0,lastBeepAt:{},pausedTimeLeft:0};
 let pickerCatFilter='all',libCatFilter='all',selectedCat='hiit',exDurValue=45,weExercises=[];
 let weekOffset=0; // 0=current week, -1=prev week, etc.
 
@@ -1845,28 +1845,59 @@ function startExercise(idx){
   const we=w.exercises[idx];const ex=getExercise(we.exerciseId);
   if(!ex){skipExercise();return;}
   T.exerciseIndex=idx;T.phase='work';T.totalTime=we.duration;T.timeLeft=we.duration;T.active=true;
+  T.paused=false;
   T.phaseEnd=Date.now()+we.duration*1000;
   T.lastBeepAt={};
-  updateTimerUI();startInterval();goBeep();
+  updateTimerUI();
+  _timerStart();
+  goBeep();
 }
 
 function startRest(){
   T.phase='rest';T.totalTime=state.settings.restDuration;T.timeLeft=state.settings.restDuration;
+  T.paused=false;
   T.phaseEnd=Date.now()+state.settings.restDuration*1000;
   T.lastBeepAt={};
-  updateTimerUI();startInterval();
+  updateTimerUI();
+  _timerStart();
 }
 
-// 250ms poll so mobile throttling still gives accurate countdown
-function startInterval(){clearInterval(T.interval);T.interval=setInterval(tick,250);}
+// ── Core timer engine: RAF loop + setInterval safety net ──────────────────
+function _timerStop(){
+  if(T.rafId){cancelAnimationFrame(T.rafId);T.rafId=null;}
+  clearInterval(T.interval);T.interval=null;
+}
 
-function tick(){
-  if(T.paused)return;
+function _timerStart(){
+  _timerStop();
+  // requestAnimationFrame loop — never throttled while app is visible on Android
+  function rafLoop(){
+    if(!T.active||T.paused)return; // stop loop if paused/stopped
+    _timerTick();
+    T.rafId=requestAnimationFrame(rafLoop);
+  }
+  T.rafId=requestAnimationFrame(rafLoop);
+  // setInterval safety net for when RAF is paused (screen off / background)
+  T.interval=setInterval(()=>{
+    if(!T.active||T.paused)return;
+    _timerTick();
+  },800);
+}
+
+// One-second boundary detection — called by both RAF and setInterval
+let _lastDisplayedSecond=-1;
+function _timerTick(){
   const now=Date.now();
   const remaining=Math.max(0,Math.ceil((T.phaseEnd-now)/1000));
+
+  // Only process logic when the displayed second actually changes
+  if(remaining===_lastDisplayedSecond)return;
+  _lastDisplayedSecond=remaining;
+
   const prev=T.timeLeft;
   T.timeLeft=remaining;
 
+  // Beep triggers
   if(T.phase==='work'){
     if(prev>5&&remaining<=5&&!T.lastBeepAt[5]){T.lastBeepAt[5]=1;alertBeep();}
     if(prev>0&&remaining===0&&!T.lastBeepAt[0]){T.lastBeepAt[0]=1;exerciseEndBeep();}
@@ -1877,11 +1908,18 @@ function tick(){
     });
   }
 
+  // Phase transition
   if(remaining<=0){
-    T.completedExercises++;clearInterval(T.interval);
+    _timerStop();
+    T.completedExercises++;
     const w=state.workouts.find(x=>x.id===T.workoutId);
-    if(T.phase==='work'){if(T.exerciseIndex<w.exercises.length-1)startRest();else{completeWorkout();return;}}
-    else{startExercise(T.exerciseIndex+1);return;}
+    if(T.phase==='work'){
+      if(T.exerciseIndex<w.exercises.length-1)startRest();
+      else completeWorkout();
+    } else {
+      startExercise(T.exerciseIndex+1);
+    }
+    return;
   }
   updateTimerUI();
 }
@@ -1934,12 +1972,15 @@ function renderProgressDots(w){document.getElementById('progress-dots').innerHTM
 function togglePause(){
   T.paused=!T.paused;
   if(T.paused){
-    // Store how much time was left when paused
+    _timerStop(); // completely stop RAF + interval
     T.pausedTimeLeft=T.timeLeft;
   } else {
-    // Reconstruct phaseEnd from remaining time so wall-clock stays accurate
+    // Recalculate end time from remaining seconds, then restart
     T.phaseEnd=Date.now()+T.pausedTimeLeft*1000;
     T.lastBeepAt=T.lastBeepAt||{};
+    _lastDisplayedSecond=-1;
+    _timerStart();
+    _timerTick(); // immediate UI refresh
   }
   const btn=document.getElementById('pause-btn');
   if(T.paused){
@@ -1952,7 +1993,7 @@ function togglePause(){
 }
 
 function skipExercise(){
-  clearInterval(T.interval);
+  _timerStop();
   const w=state.workouts.find(x=>x.id===T.workoutId);
   if(T.exerciseIndex<w.exercises.length-1)startExercise(T.exerciseIndex+1);
   else completeWorkout();
@@ -1969,7 +2010,13 @@ function releaseWakeLock(){
 }
 // Re-request after tab becomes visible again
 document.addEventListener('visibilitychange',()=>{
-  if(document.visibilityState==='visible'&&T.active&&!T.paused) requestWakeLock();
+  if(document.visibilityState==='visible'&&T.active&&!T.paused){
+    // Restart full timer when returning from background
+    _lastDisplayedSecond=-1;
+    _timerStart();
+    _timerTick();
+    requestWakeLock();
+  }
 });
 
 // ── MEDIA SESSION (lock screen display) ──────────────
@@ -1992,7 +2039,7 @@ function clearMediaSession(){
 }
 
 function stopWorkout(){
-  clearInterval(T.interval);
+  _timerStop();
   clearInterval(CDT.interval);
   document.getElementById('countdown-overlay').classList.remove('open');
   T.active=false;
@@ -2002,7 +2049,7 @@ function stopWorkout(){
 }
 
 function completeWorkout(){
-  clearInterval(T.interval);T.active=false;
+  _timerStop();T.active=false;
   releaseWakeLock();
   const elapsed=T.startTime?Math.max(1,Math.round((Date.now()-T.startTime)/60000)):calcWorkoutDuration(state.workouts.find(x=>x.id===T.workoutId));
   const w=state.workouts.find(x=>x.id===T.workoutId);
