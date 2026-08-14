@@ -1176,6 +1176,20 @@ const WORKOUTS_DEFAULT = [
    exercises:[{exerciseId:'e25',duration:45},{exerciseId:'e26',duration:45},{exerciseId:'e3',duration:45},{exerciseId:'e27',duration:45},{exerciseId:'e28',duration:45},{exerciseId:'e30',duration:45},{exerciseId:'e31',duration:45},{exerciseId:'e32',duration:45},{exerciseId:'e35',duration:60},{exerciseId:'e29',duration:45},{exerciseId:'e36',duration:45}]},
   {id:'w3',name:'Core Crusher',description:'Starker Kern, flacher Bauch',color:'#00d4ff',
    exercises:[{exerciseId:'e20',duration:90},{exerciseId:'e12',duration:45},{exerciseId:'e13',duration:45},{exerciseId:'e15',duration:45},{exerciseId:'e21',duration:60},{exerciseId:'e22',duration:60},{exerciseId:'e14',duration:45},{exerciseId:'e11',duration:45},{exerciseId:'e23',duration:60},{exerciseId:'e16',duration:45},{exerciseId:'e18',duration:45}]},
+  {id:'w4',name:'Rücken-Reha',description:'Sanfter Wiedereinstieg nach Reizung — 2 Sätze je Übung',color:'#ffb300',
+   exercises:[
+     {exerciseId:'e63',duration:45,reps:8},{exerciseId:'e63',duration:45,reps:8},       // Bird Dog
+     {exerciseId:'e16',duration:35},{exerciseId:'e16',duration:35},                     // Dead Bug
+     {exerciseId:'e28',duration:45},{exerciseId:'e28',duration:45},                     // Glute Bridge
+     {exerciseId:'e21',duration:18},{exerciseId:'e21',duration:18},                     // Side Plank Links
+     {exerciseId:'e22',duration:18},{exerciseId:'e22',duration:18},                     // Side Plank Rechts
+     {exerciseId:'e49',duration:40},{exerciseId:'e49',duration:40},                     // Pallof Press
+     {exerciseId:'e65',duration:45,reps:12},{exerciseId:'e65',duration:45,reps:12},     // Theraband-Rudern
+     {exerciseId:'e66',duration:45,reps:10},{exerciseId:'e66',duration:45,reps:10},     // Hip Hinge
+     {exerciseId:'e64',duration:45,reps:8},{exerciseId:'e64',duration:45,reps:8},       // Y-T-W
+     {exerciseId:'e54',duration:18},{exerciseId:'e54',duration:18},                     // Reverse Plank
+     {exerciseId:'e67',duration:45,reps:8},{exerciseId:'e67',duration:45,reps:8},       // Modifizierter Superman
+   ]},
 ];
 
 // ═══════════════════════════════════════
@@ -1195,6 +1209,11 @@ function loadState(){
       const existingIds=new Set(state.exercises.map(e=>e.id));
       EXERCISES_DEFAULT.forEach(ex=>{
         if(!existingIds.has(ex.id)) state.exercises.push(JSON.parse(JSON.stringify(ex)));
+      });
+      // Migration: add any new default workouts not yet in saved state
+      const existingWorkoutIds=new Set(state.workouts.map(w=>w.id));
+      WORKOUTS_DEFAULT.forEach(w=>{
+        if(!existingWorkoutIds.has(w.id)) state.workouts.push(JSON.parse(JSON.stringify(w)));
       });
     } else {
       state.exercises=JSON.parse(JSON.stringify(EXERCISES_DEFAULT));
