@@ -47,6 +47,7 @@
   --core-c:  #00cfff;
   --legs-c:  #ff0055;
   --plank-c: #b060ff;
+  --mobility-c: #ffb300;
   --danger:  #ff0000;
   --r:       0px;
   --r-sm:    0px;
@@ -707,6 +708,7 @@ nav button svg { width: 20px; height: 20px; }
           <div class="cat-opt" data-cat="core" onclick="selectCat('core')" id="cat-opt-core"></div>
           <div class="cat-opt" data-cat="legs" onclick="selectCat('legs')" id="cat-opt-legs"></div>
           <div class="cat-opt" data-cat="plank" onclick="selectCat('plank')">📐 Plank</div>
+          <div class="cat-opt" data-cat="mobility" onclick="selectCat('mobility')">🧘 Mobility</div>
         </div>
       </div>
       <div class="field"><label id="lbl-ex-emoji"></label><input type="text" id="ex-emoji" placeholder="💪" maxlength="4"></div>
@@ -861,7 +863,7 @@ const I18N = {
     doneTitle:'GESCHAFFT!', doneMsg:'Großartig. Jede Einheit bringt dich näher ans Ziel.',
     compEx:'Übungen', compMin:'Minuten', doneBtn:'Weiter',
     libTitle:'ÜBUNGEN', libSub:'Deine Bibliothek',
-    filterAll:'Alle', filterHiit:'HIIT', filterCore:'Core', filterPlank:'Plank', filterLegs:'Beine',
+    filterAll:'Alle', filterHiit:'HIIT', filterCore:'Core', filterPlank:'Plank', filterLegs:'Beine', filterMobility:'Mobility',
     settingsTitle:'EINSTELLUNGEN', settingsSub:'Timer & Ziele',
     timerSection:'TIMER',
     hiitDur:'HIIT Arbeitszeit', hiitDurSub:'Standard für neue HIIT-Übungen',
@@ -894,7 +896,7 @@ const I18N = {
     deleteExConfirm:'Übung löschen?', deleteWorkoutConfirm:'Workout löschen?',
     editWorkout:'Workout bearbeiten', deleteWorkoutCard:(n)=>`„${n}" löschen`,
     startWorkoutCard:(n)=>`„${n}" starten`,
-    catLabelHiit:'HIIT', catLabelCore:'Core', catLabelLegs:'Beine', catLabelPlank:'Plank',
+    catLabelHiit:'HIIT', catLabelCore:'Core', catLabelLegs:'Beine', catLabelPlank:'Plank', catLabelMobility:'Mobility',
     // WEEK TRACKER
     weekTitle:'Diese Woche',
     streakLabel:(n)=>n===1?`${n} Tag Streak`:`${n} Tage Streak`,
@@ -923,7 +925,7 @@ const I18N = {
     doneTitle:'DONE!', doneMsg:'Great work. Every session brings you closer to your goal.',
     compEx:'Exercises', compMin:'Minutes', doneBtn:'Continue',
     libTitle:'EXERCISES', libSub:'Your Library',
-    filterAll:'All', filterHiit:'HIIT', filterCore:'Core', filterPlank:'Plank', filterLegs:'Legs',
+    filterAll:'All', filterHiit:'HIIT', filterCore:'Core', filterPlank:'Plank', filterLegs:'Legs', filterMobility:'Mobility',
     settingsTitle:'SETTINGS', settingsSub:'Timer & Goals',
     timerSection:'TIMER',
     hiitDur:'HIIT Work Time', hiitDurSub:'Default for new HIIT exercises',
@@ -956,7 +958,7 @@ const I18N = {
     deleteExConfirm:'Delete exercise?', deleteWorkoutConfirm:'Delete workout?',
     editWorkout:'Edit workout', deleteWorkoutCard:(n)=>`Delete "${n}"`,
     startWorkoutCard:(n)=>`Start "${n}"`,
-    catLabelHiit:'HIIT', catLabelCore:'Core', catLabelLegs:'Legs', catLabelPlank:'Plank',
+    catLabelHiit:'HIIT', catLabelCore:'Core', catLabelLegs:'Legs', catLabelPlank:'Plank', catLabelMobility:'Mobility',
     // WEEK TRACKER
     weekTitle:'This Week',
     streakLabel:(n)=>n===1?`${n} Day Streak`:`${n} Day Streak`,
@@ -1150,6 +1152,21 @@ const EXERCISES_DEFAULT = [
   {id:'e60',name:'Kickbacks stehend',category:'legs',defaultDuration:45,emoji:'🦿',description:'Im Stehen Bein nach hinten-oben heben, Gesäß maximal anspannen oben'},
   {id:'e61',name:'Frog Pumps',category:'legs',defaultDuration:45,emoji:'🐸',description:'Im Liegen Fußsohlen zusammen, Knie außen — Hüfte pulsierend heben'},
   {id:'e62',name:'Sumo Squat Pulse',category:'legs',defaultDuration:45,emoji:'💫',description:'In tiefer Sumo-Kniebeuge bleiben, kleine pulsierende Bewegungen'},
+  // ── Mobility / Rücken & Schulter-Reha ───────────────────────────────────
+  {id:'e63',name:'Bird Dog',category:'mobility',mode:'reps',defaultReps:8,defaultDuration:45,emoji:'🐕',description:'Vierfüßlerstand: gegenüberliegenden Arm und Bein strecken, 3–5 Sek. halten, Seite wechseln'},
+  {id:'e64',name:'Y-T-W',category:'mobility',mode:'reps',defaultReps:8,defaultDuration:45,emoji:'🤸',description:'Bauchlage: Arme nacheinander in Y-, T- und W-Position heben, Schulterblätter aktiv zusammenziehen'},
+  {id:'e65',name:'Theraband-Rudern',category:'mobility',mode:'reps',defaultReps:12,defaultDuration:45,emoji:'🎗️',description:'Theraband auf Brusthöhe befestigt, Ellenbogen nah am Körper nach hinten ziehen, Schulterblätter zusammenziehen'},
+  {id:'e66',name:'Hip Hinge',category:'mobility',mode:'reps',defaultReps:10,defaultDuration:45,emoji:'🦴',description:'Rücken neutral, Hüfte nach hinten schieben, Oberkörper absenken — Bewegung kommt aus der Hüfte, nicht der Wirbelsäule'},
+  {id:'e67',name:'Modifizierter Superman',category:'mobility',mode:'reps',defaultReps:8,defaultDuration:45,emoji:'🦸',description:'Bauchlage: abwechselnd nur einen Arm ODER ein Bein leicht anheben — Rücken nicht überstrecken'},
+  {id:'e68',name:'Wall Slides',category:'mobility',mode:'reps',defaultReps:12,defaultDuration:45,emoji:'🧱',description:'Rücken und Arme an der Wand, Arme langsam auf- und abgleiten lassen — Kontakt zur Wand halten'},
+  {id:'e69',name:'Band Pull-Apart',category:'mobility',mode:'reps',defaultReps:15,defaultDuration:45,emoji:'🔗',description:'Theraband auf Schulterhöhe mit gestreckten Armen auseinanderziehen, Schulterblätter zusammenziehen'},
+  {id:'e70',name:'Pike Push-Ups',category:'mobility',mode:'reps',defaultReps:10,defaultDuration:45,emoji:'🔺',description:'Po hoch in Pike-Position, Kopf Richtung Boden absenken und drücken — Fokus auf die Schultern'},
+  {id:'e71',name:'Scapula Push-Ups',category:'mobility',mode:'reps',defaultReps:12,defaultDuration:45,emoji:'🦾',description:'In Liegestützposition Schulterblätter zusammen- und auseinanderziehen, Arme bleiben gestreckt'},
+  {id:'e72',name:'World’s Greatest Stretch',category:'mobility',defaultDuration:45,emoji:'🌍',description:'Ausfallschritt, Ellenbogen zum Boden, Rotation zur Decke — dehnt Hüfte, Rücken und Brustwirbelsäule, Seite wechseln'},
+  // ── Explosiv / Surfen ────────────────────────────────────────────────────
+  {id:'e73',name:'Surf Pop-Up',category:'hiit',defaultDuration:45,emoji:'🏄',description:'Aus der Bauchlage explosiv in die Surf-Stance springen — tief und stabil landen'},
+  {id:'e74',name:'Plyo Push-Up',category:'hiit',defaultDuration:45,emoji:'💥',description:'Liegestütz explosiv ausführen, Hände heben kurz vom Boden ab — für Power beim Paddeln'},
+  {id:'e75',name:'Broad Jump',category:'hiit',defaultDuration:45,emoji:'🐆',description:'Weiter Strecksprung nach vorne aus dem Stand, weich abfangen — für explosive Power beim Absprung'},
 ];
 
 const WORKOUTS_DEFAULT = [
@@ -1196,8 +1213,8 @@ function saveState(){localStorage.setItem('grind-v2',JSON.stringify(state));}
 function fmtTime(s){return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`;}
 function calcWorkoutDuration(w){let tot=0;w.exercises.forEach((we,i)=>{tot+=we.duration;if(i<w.exercises.length-1)tot+=state.settings.restDuration;});return Math.round(tot/60);}
 function getExercise(id){return state.exercises.find(e=>e.id===id);}
-function catColor(c){return{hiit:'var(--hiit-c)',core:'var(--core-c)',legs:'var(--legs-c)',plank:'var(--plank-c)'}[c]||'var(--dim)';}
-function catLabel(c){return{hiit:t('catLabelHiit'),core:t('catLabelCore'),legs:t('catLabelLegs'),plank:t('catLabelPlank')}[c]||c;}
+function catColor(c){return{hiit:'var(--hiit-c)',core:'var(--core-c)',legs:'var(--legs-c)',plank:'var(--plank-c)',mobility:'var(--mobility-c)'}[c]||'var(--dim)';}
+function catLabel(c){return{hiit:t('catLabelHiit'),core:t('catLabelCore'),legs:t('catLabelLegs'),plank:t('catLabelPlank'),mobility:t('catLabelMobility')}[c]||c;}
 function genId(p='id'){return p+Date.now()+Math.random().toString(36).slice(2,6);}
 
 // ═══════════════════════════════════════
@@ -1502,8 +1519,8 @@ function renderWorkoutCards(){
 function renderLibrary(){renderFilterChips();renderExerciseList();}
 function renderFilterChips(){
   const row=document.getElementById('filter-row');
-  const cats=['all','hiit','core','plank','legs'];
-  const keys={all:'filterAll',hiit:'filterHiit',core:'filterCore',plank:'filterPlank',legs:'filterLegs'};
+  const cats=['all','hiit','core','plank','legs','mobility'];
+  const keys={all:'filterAll',hiit:'filterHiit',core:'filterCore',plank:'filterPlank',legs:'filterLegs',mobility:'filterMobility'};
   row.innerHTML=cats.map(c=>`<button class="filter-chip ${libCatFilter===c?'active':''}" onclick="setLibFilter('${c}')">${t(keys[c])}</button>`).join('');
 }
 function setLibFilter(c){libCatFilter=c;renderFilterChips();renderExerciseList();}
@@ -1748,8 +1765,8 @@ function removeWeExercise(idx){weExercises.splice(idx,1);renderWorkoutEditList()
 
 function renderPickerFilter(){
   const row=document.getElementById('picker-filter-row');
-  const cats=['all','hiit','core','plank','legs'];
-  const keys={all:'filterAll',hiit:'filterHiit',core:'filterCore',plank:'filterPlank',legs:'filterLegs'};
+  const cats=['all','hiit','core','plank','legs','mobility'];
+  const keys={all:'filterAll',hiit:'filterHiit',core:'filterCore',plank:'filterPlank',legs:'filterLegs',mobility:'filterMobility'};
   row.innerHTML=cats.map(c=>`<button class="filter-chip ${pickerCatFilter===c?'active':''}" onclick="setPickerFilter('${c}')">${t(keys[c])}</button>`).join('');
 }
 function setPickerFilter(c){pickerCatFilter=c;renderPickerFilter();renderExercisePicker();}
