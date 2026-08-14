@@ -290,6 +290,7 @@ nav button svg { width: 20px; height: 20px; }
 .timer-display .phase-label { font-size: 9px; font-weight: 800; letter-spacing: 0.25em; text-transform: uppercase; color: var(--dim); margin-top: 4px; font-family: 'Barlow'; }
 .exercise-name { font-family: 'Barlow Condensed'; font-weight: 900; font-size: 2.6rem; letter-spacing: 0.02em; text-align: center; line-height: 1; margin-top: 16px; min-height: 60px; text-transform: uppercase; }
 .exercise-desc { font-size: 11px; color: var(--dim); text-align: center; margin-top: 5px; max-width: 280px; font-family: 'Barlow'; font-weight: 500; }
+.reps-target { font-family: 'JetBrains Mono', monospace; font-size: 1.5rem; font-weight: 700; color: var(--accent); text-align: center; margin-top: 10px; }
 .workout-progress { width: 100%; margin-top: 16px; }
 .progress-info { display: flex; justify-content: space-between; font-size: 9px; font-weight: 800; color: var(--dim); letter-spacing: 0.14em; text-transform: uppercase; font-family: 'Barlow'; margin-bottom: 6px; }
 .progress-bar-outer { height: 2px; background: var(--bg4); }
@@ -413,8 +414,8 @@ nav button svg { width: 20px; height: 20px; }
 .field input:focus, .field textarea:focus { border-color: var(--accent); }
 .field textarea { resize: none; min-height: 64px; }
 .cat-select { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.cat-opt { padding: 10px; border: 1px solid var(--border); background: var(--bg3); color: var(--dim); font-family: 'Barlow'; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; text-align: center; transition: all 0.15s; }
-.cat-opt.selected { background: rgba(197,255,0,0.1); border-color: var(--accent); color: var(--accent); }
+.cat-opt, .mode-opt { padding: 10px; border: 1px solid var(--border); background: var(--bg3); color: var(--dim); font-family: 'Barlow'; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; text-align: center; transition: all 0.15s; }
+.cat-opt.selected, .mode-opt.selected { background: rgba(197,255,0,0.1); border-color: var(--accent); color: var(--accent); }
 
 /* ── WORKOUT EDIT MODAL ──────────────────────────────── */
 .edit-exercise-list { display: flex; flex-direction: column; gap: 6px; }
@@ -551,6 +552,7 @@ nav button svg { width: 20px; height: 20px; }
     </div>
     <div class="exercise-name" id="exercise-name">—</div>
     <div class="exercise-desc" id="exercise-desc"></div>
+    <div class="reps-target" id="reps-target" style="display:none"></div>
     <div class="rest-next-box" id="rest-next-box" style="display:none">
       <div class="rest-next-label" id="lbl-rest-next">NÄCHSTE ÜBUNG</div>
       <div class="rest-next-name" id="rest-next-name"></div>
@@ -709,11 +711,18 @@ nav button svg { width: 20px; height: 20px; }
       </div>
       <div class="field"><label id="lbl-ex-emoji"></label><input type="text" id="ex-emoji" placeholder="💪" maxlength="4"></div>
       <div class="field">
+        <label id="lbl-ex-mode"></label>
+        <div class="cat-select">
+          <div class="mode-opt" data-mode="time" onclick="selectMode('time')" id="mode-opt-time"></div>
+          <div class="mode-opt" data-mode="reps" onclick="selectMode('reps')" id="mode-opt-reps"></div>
+        </div>
+      </div>
+      <div class="field">
         <label id="lbl-ex-dur"></label>
         <div class="stepper" style="justify-content:flex-start;gap:14px">
-          <button onclick="adjustField(-5)" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center">−</button>
+          <button onclick="adjustField(-1)" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center">−</button>
           <div class="val" id="ex-dur-inp" style="font-family:'JetBrains Mono';font-size:1.3rem;font-weight:700;color:var(--accent);min-width:60px;text-align:center">45</div>
-          <button onclick="adjustField(5)" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>
+          <button onclick="adjustField(1)" style="width:36px;height:36px;border-radius:50%;border:1px solid var(--border);background:var(--bg3);color:var(--text);font-size:1.2rem;cursor:pointer;display:flex;align-items:center;justify-content:center">+</button>
         </div>
       </div>
     </div>
@@ -866,6 +875,9 @@ const I18N = {
     addExTitle:'Übung hinzufügen', editExTitle:'Übung bearbeiten',
     exNameLabel:'Name', exDescLabel:'Beschreibung / Ausführung',
     exCatLabel:'Kategorie', exEmojiLabel:'Emoji', exDurLabel:'Standard-Dauer (Sekunden)',
+    exModeLabel:'Modus', modeTime:'⏱ Zeit', modeReps:'🔢 Wiederholungen',
+    exRepsLabel:'Standard-Wiederholungen',
+    doneSet:'FERTIG', repsTargetLabel:(n)=>`🎯 ${n} Wiederholungen`,
     catCore:'🔵 Core / Bauch', catLegs:'🦵 Beine / Gesäß',
     deleteEx:'Löschen', saveEx:'Speichern',
     editWorkoutTitle:'Workout bearbeiten',
@@ -925,6 +937,9 @@ const I18N = {
     addExTitle:'Add Exercise', editExTitle:'Edit Exercise',
     exNameLabel:'Name', exDescLabel:'Description / Instructions',
     exCatLabel:'Category', exEmojiLabel:'Emoji', exDurLabel:'Default Duration (seconds)',
+    exModeLabel:'Mode', modeTime:'⏱ Time', modeReps:'🔢 Reps',
+    exRepsLabel:'Default Reps',
+    doneSet:'DONE', repsTargetLabel:(n)=>`🎯 ${n} reps`,
     catCore:'🔵 Core / Abs', catLegs:'🦵 Legs / Glutes',
     deleteEx:'Delete', saveEx:'Save',
     editWorkoutTitle:'Edit Workout',
@@ -1021,7 +1036,10 @@ function applyTranslations() {
   s('lbl-ex-desc', t('exDescLabel'));
   s('lbl-ex-cat', t('exCatLabel'));
   s('lbl-ex-emoji', t('exEmojiLabel'));
-  s('lbl-ex-dur', t('exDurLabel'));
+  s('lbl-ex-mode', t('exModeLabel'));
+  s('mode-opt-time', t('modeTime'));
+  s('mode-opt-reps', t('modeReps'));
+  updateExDurLabel();
   s('cat-opt-core', t('catCore'));
   s('cat-opt-legs', t('catLegs'));
   s('lbl-ex-save', t('saveEx'));
@@ -1056,6 +1074,7 @@ function applyTranslations() {
 function resetPauseBtn() {
   const btn = document.getElementById('pause-btn');
   if (!btn) return;
+  btn.onclick = togglePause;
   btn.innerHTML = `<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg><span>${t('pause')}</span>`;
   btn.setAttribute('aria-label', t('pause'));
   btn.className = 'ctrl-btn primary';
@@ -1146,8 +1165,8 @@ const WORKOUTS_DEFAULT = [
 // STATE & PERSISTENCE
 // ═══════════════════════════════════════
 let state = {exercises:[],workouts:[],settings:{hiitDuration:45,plankDuration:90,restDuration:15},startWeight:null,goalWeight:null,currentWeight:null,workoutDays:{}};
-let T = {active:false,paused:false,workoutId:null,exerciseIndex:0,phase:'work',timeLeft:0,totalTime:0,interval:null,rafId:null,completedExercises:0,startTime:null,phaseEnd:0,lastBeepAt:{},pausedTimeLeft:0};
-let pickerCatFilter='all',libCatFilter='all',selectedCat='hiit',exDurValue=45,weExercises=[];
+let T = {active:false,paused:false,workoutId:null,exerciseIndex:0,phase:'work',timeLeft:0,totalTime:0,interval:null,rafId:null,completedExercises:0,startTime:null,phaseEnd:0,lastBeepAt:{},pausedTimeLeft:0,repsMode:false,workStartTime:0};
+let pickerCatFilter='all',libCatFilter='all',selectedCat='hiit',exDurValue=45,exRepsValue=12,exFieldMode='time',weExercises=[];
 let weekOffset=0; // 0=current week, -1=prev week, etc.
 
 function loadState(){
@@ -1498,7 +1517,7 @@ function renderExerciseList(){
       <div class="ex-emoji">${e.emoji}</div>
       <div class="ex-info"><div class="ex-name">${e.name}</div><div class="ex-desc">${e.description}</div></div>
       <div class="ex-tag" style="color:${catColor(e.category)}">${catLabel(e.category)}</div>
-      <div class="ex-time">${fmtTime(e.defaultDuration)}</div>
+      <div class="ex-time">${e.mode==='reps'?(e.defaultReps||12)+'×':fmtTime(e.defaultDuration)}</div>
     </div>
   `).join('');
 }
@@ -1522,7 +1541,20 @@ function saveWeightSettings(){
   if(!isNaN(sw))state.startWeight=sw;if(!isNaN(gw))state.goalWeight=gw;if(!isNaN(cw))state.currentWeight=cw;
   saveState();
 }
-function adjustField(delta){exDurValue=Math.max(5,exDurValue+delta);document.getElementById('ex-dur-inp').textContent=exDurValue;}
+function adjustField(dir){
+  if(exFieldMode==='reps'){exRepsValue=Math.max(1,exRepsValue+dir*1);document.getElementById('ex-dur-inp').textContent=exRepsValue;}
+  else{exDurValue=Math.max(5,exDurValue+dir*5);document.getElementById('ex-dur-inp').textContent=exDurValue;}
+}
+function updateExDurLabel(){
+  const lbl=document.getElementById('lbl-ex-dur');
+  if(lbl) lbl.textContent=exFieldMode==='reps'?t('exRepsLabel'):t('exDurLabel');
+}
+function selectMode(m){
+  exFieldMode=m;
+  document.querySelectorAll('.mode-opt').forEach(el=>el.classList.toggle('selected',el.dataset.mode===m));
+  updateExDurLabel();
+  document.getElementById('ex-dur-inp').textContent=m==='reps'?exRepsValue:exDurValue;
+}
 
 // ═══════════════════════════════════════
 // MODALS
@@ -1546,7 +1578,8 @@ function showAddExerciseModal(){
   document.getElementById('ex-desc-inp').value='';
   document.getElementById('ex-emoji').value='💪';
   exDurValue=state.settings.hiitDuration;
-  document.getElementById('ex-dur-inp').textContent=exDurValue;
+  exRepsValue=12;
+  selectMode('time');
   selectCat('hiit');
   document.getElementById('modal-exercise-title').textContent=t('addExTitle');
   document.getElementById('ex-delete-btn').style.display='none';
@@ -1560,7 +1593,8 @@ function showEditExerciseModal(id){
   document.getElementById('ex-desc-inp').value=ex.description;
   document.getElementById('ex-emoji').value=ex.emoji;
   exDurValue=ex.defaultDuration;
-  document.getElementById('ex-dur-inp').textContent=exDurValue;
+  exRepsValue=ex.defaultReps||12;
+  selectMode(ex.mode==='reps'?'reps':'time');
   selectCat(ex.category);
   document.getElementById('modal-exercise-title').textContent=t('editExTitle');
   const db=document.getElementById('ex-delete-btn');
@@ -1574,7 +1608,7 @@ function saveExercise(){
   const id=document.getElementById('ex-edit-id').value;
   const name=document.getElementById('ex-name').value.trim();
   if(!name){alert(t('alertNoName'));return;}
-  const ex={id:id||genId('ex'),name,description:document.getElementById('ex-desc-inp').value.trim(),emoji:document.getElementById('ex-emoji').value.trim()||'💪',category:selectedCat,defaultDuration:exDurValue};
+  const ex={id:id||genId('ex'),name,description:document.getElementById('ex-desc-inp').value.trim(),emoji:document.getElementById('ex-emoji').value.trim()||'💪',category:selectedCat,mode:exFieldMode,defaultDuration:exDurValue,defaultReps:exRepsValue};
   if(id){const idx=state.exercises.findIndex(e=>e.id===id);if(idx!==-1)state.exercises[idx]=ex;}
   else state.exercises.push(ex);
   saveState();renderLibrary();closeModal('modal-exercise');
@@ -1610,11 +1644,15 @@ function renderWorkoutEditList(){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>
       </div>
       <div class="ex-name-sm">${ex.emoji} ${ex.name}</div>
-      <div class="dur-stepper">
+      ${ex.mode==='reps' ? `<div class="dur-stepper">
+        <button onclick="changeWeReps(${idx},-1)" aria-label="Weniger">−</button>
+        <div class="dur-val">${we.reps||ex.defaultReps||12}×</div>
+        <button onclick="changeWeReps(${idx},1)" aria-label="Mehr">+</button>
+      </div>` : `<div class="dur-stepper">
         <button onclick="changeWeDur(${idx},-5)" aria-label="Weniger">−</button>
         <div class="dur-val">${fmtTime(we.duration)}</div>
         <button onclick="changeWeDur(${idx},5)" aria-label="Mehr">+</button>
-      </div>
+      </div>`}
       <button class="remove-btn" onclick="removeWeExercise(${idx})" aria-label="Entfernen">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><polyline points="3,6 5,6 21,6"/><path d="M19,6l-1,14H6L5,6"/><path d="M10,11v6M14,11v6"/></svg>
       </button>
@@ -1705,6 +1743,7 @@ function initDragReorder(list){
 }
 
 function changeWeDur(idx,delta){weExercises[idx].duration=Math.max(5,weExercises[idx].duration+delta);renderWorkoutEditList();}
+function changeWeReps(idx,delta){weExercises[idx].reps=Math.max(1,(weExercises[idx].reps||1)+delta);renderWorkoutEditList();}
 function removeWeExercise(idx){weExercises.splice(idx,1);renderWorkoutEditList();}
 
 function renderPickerFilter(){
@@ -1723,11 +1762,16 @@ function renderExercisePicker(){
       <div class="p-emoji">${ex.emoji}</div>
       <div class="p-name">${ex.name}</div>
       <div class="p-tag" style="color:${catColor(ex.category)}">${catLabel(ex.category)}</div>
-      <div style="font-family:'JetBrains Mono';font-size:12px;color:var(--accent);flex-shrink:0">${fmtTime(ex.defaultDuration)}</div>
+      <div style="font-family:'JetBrains Mono';font-size:12px;color:var(--accent);flex-shrink:0">${ex.mode==='reps'?(ex.defaultReps||12)+'×':fmtTime(ex.defaultDuration)}</div>
     </div>
   `).join('');
 }
-function addWeExercise(exerciseId){const ex=getExercise(exerciseId);if(!ex)return;weExercises.push({exerciseId,duration:ex.defaultDuration});renderWorkoutEditList();}
+function addWeExercise(exerciseId){
+  const ex=getExercise(exerciseId);if(!ex)return;
+  const entry={exerciseId,duration:ex.defaultDuration};
+  if(ex.mode==='reps')entry.reps=ex.defaultReps||12;
+  weExercises.push(entry);renderWorkoutEditList();
+}
 
 function saveWorkoutEdit(){
   const id=document.getElementById('we-workout-id').value;
@@ -1844,17 +1888,24 @@ function startExercise(idx){
   const w=state.workouts.find(x=>x.id===T.workoutId);
   const we=w.exercises[idx];const ex=getExercise(we.exerciseId);
   if(!ex){skipExercise();return;}
-  T.exerciseIndex=idx;T.phase='work';T.totalTime=we.duration;T.timeLeft=we.duration;T.active=true;
+  T.exerciseIndex=idx;T.phase='work';T.active=true;
   T.paused=false;
-  T.phaseEnd=Date.now()+we.duration*1000;
+  T.repsMode=ex.mode==='reps';
   T.lastBeepAt={};
+  if(T.repsMode){
+    T.totalTime=0;T.timeLeft=0;
+    T.workStartTime=Date.now();
+  } else {
+    T.totalTime=we.duration;T.timeLeft=we.duration;
+    T.phaseEnd=Date.now()+we.duration*1000;
+  }
   updateTimerUI();
   _timerStart();
   goBeep();
 }
 
 function startRest(){
-  T.phase='rest';T.totalTime=state.settings.restDuration;T.timeLeft=state.settings.restDuration;
+  T.phase='rest';T.repsMode=false;T.totalTime=state.settings.restDuration;T.timeLeft=state.settings.restDuration;
   T.paused=false;
   T.phaseEnd=Date.now()+state.settings.restDuration*1000;
   T.lastBeepAt={};
@@ -1884,10 +1935,35 @@ function _timerStart(){
   },800);
 }
 
+// Shared phase-completion logic — triggered by countdown reaching zero OR
+// by the user manually finishing a reps-based (non-timed) set.
+function advancePhase(){
+  _timerStop();
+  T.completedExercises++;
+  const w=state.workouts.find(x=>x.id===T.workoutId);
+  if(T.phase==='work'){
+    if(T.exerciseIndex<w.exercises.length-1)startRest();
+    else completeWorkout();
+  } else {
+    startExercise(T.exerciseIndex+1);
+  }
+}
+
 // One-second boundary detection — called by both RAF and setInterval
 let _lastDisplayedSecond=-1;
 function _timerTick(){
   const now=Date.now();
+
+  // Reps-based (non-timed) sets: count up, never auto-advance
+  if(T.phase==='work'&&T.repsMode){
+    const elapsed=Math.floor((now-T.workStartTime)/1000);
+    if(elapsed===_lastDisplayedSecond)return;
+    _lastDisplayedSecond=elapsed;
+    T.timeLeft=elapsed;
+    updateTimerUI();
+    return;
+  }
+
   const remaining=Math.max(0,Math.ceil((T.phaseEnd-now)/1000));
 
   // Only process logic when the displayed second actually changes
@@ -1910,15 +1986,7 @@ function _timerTick(){
 
   // Phase transition
   if(remaining<=0){
-    _timerStop();
-    T.completedExercises++;
-    const w=state.workouts.find(x=>x.id===T.workoutId);
-    if(T.phase==='work'){
-      if(T.exerciseIndex<w.exercises.length-1)startRest();
-      else completeWorkout();
-    } else {
-      startExercise(T.exerciseIndex+1);
-    }
+    advancePhase();
     return;
   }
   updateTimerUI();
@@ -1928,18 +1996,21 @@ function updateTimerUI(){
   const w=state.workouts.find(x=>x.id===T.workoutId);
   const we=w.exercises[T.exerciseIndex];const ex=getExercise(we.exerciseId);
   const isRest=T.phase==='rest';
+  const isReps=!isRest&&T.repsMode;
   const badge=document.getElementById('phase-badge');
   badge.textContent=isRest?t('phasePause'):t('phaseWorkout');
   badge.style.color=isRest?'var(--rest-c)':catColor(ex?.category||'hiit');
   const ring=document.getElementById('timer-ring');
-  ring.style.strokeDashoffset=565.49*(1-T.timeLeft/T.totalTime);
+  ring.style.strokeDashoffset=isReps?0:565.49*(1-T.timeLeft/T.totalTime);
   ring.style.stroke=isRest?'var(--rest-c)':catColor(ex?.category||'hiit');
   document.getElementById('timer-display').textContent=fmtTime(T.timeLeft);
-  document.getElementById('timer-phase-label').textContent=isRest?'REST':'WORK';
+  document.getElementById('timer-phase-label').textContent=isRest?'REST':(isReps?'REPS':'WORK');
+  const repsTargetEl=document.getElementById('reps-target');
   if(isRest){
     const nx=getExercise(w.exercises[T.exerciseIndex+1]?.exerciseId);
     document.getElementById('exercise-name').textContent=t('phasePause');
     document.getElementById('exercise-desc').textContent='';
+    if(repsTargetEl) repsTargetEl.style.display='none';
     const rnb=document.getElementById('rest-next-box');
     if(nx&&rnb){
       rnb.style.display='block';
@@ -1950,6 +2021,10 @@ function updateTimerUI(){
   }else{
     document.getElementById('exercise-name').textContent=ex?.name||'—';
     document.getElementById('exercise-desc').textContent=ex?.description||'';
+    if(repsTargetEl){
+      if(isReps){repsTargetEl.style.display='block';repsTargetEl.textContent=t('repsTargetLabel',we.reps||ex?.defaultReps||12);}
+      else repsTargetEl.style.display='none';
+    }
     const rnb=document.getElementById('rest-next-box');
     if(rnb) rnb.style.display='none';
   }
@@ -1963,8 +2038,30 @@ function updateTimerUI(){
   });
   const nwe=w.exercises[T.exerciseIndex+1];const nex=nwe?getExercise(nwe.exerciseId):null;
   const nb=document.getElementById('next-exercise-box');
-  if(nex&&!isRest){nb.style.display='flex';document.getElementById('next-exercise-name').textContent=nex.name;document.getElementById('next-exercise-time').textContent=fmtTime(nwe.duration);}
+  if(nex&&!isRest){nb.style.display='flex';document.getElementById('next-exercise-name').textContent=nex.name;document.getElementById('next-exercise-time').textContent=nex.mode==='reps'?(nwe.reps||nex.defaultReps||12)+'×':fmtTime(nwe.duration);}
   else nb.style.display='none';
+  updatePrimaryCtrlBtn();
+}
+
+function updatePrimaryCtrlBtn(){
+  const btn=document.getElementById('pause-btn');
+  if(!btn)return;
+  if(T.phase==='work'&&T.repsMode){
+    btn.onclick=advancePhase;
+    btn.innerHTML=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><polyline points="20,6 9,17 4,12"/></svg><span>${t('doneSet')}</span>`;
+    btn.setAttribute('aria-label',t('doneSet'));
+    btn.className='ctrl-btn primary';
+  } else {
+    btn.onclick=togglePause;
+    if(T.paused){
+      btn.innerHTML=`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="5,3 19,12 5,21"/></svg><span>${t('resume')}</span>`;
+      btn.setAttribute('aria-label',t('resume'));
+    } else {
+      btn.innerHTML=`<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg><span>${t('pause')}</span>`;
+      btn.setAttribute('aria-label',t('pause'));
+    }
+    btn.className='ctrl-btn primary';
+  }
 }
 
 function renderProgressDots(w){document.getElementById('progress-dots').innerHTML=w.exercises.map(()=>`<div class="progress-dot"></div>`).join('');}
